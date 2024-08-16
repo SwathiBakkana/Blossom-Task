@@ -1,0 +1,61 @@
+import tensorflow as tf
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.utils import to_categorical
+import matplotlib.pyplot as plt
+# Load and preprocess the dataset
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_train = x_train.reshape(-1, 28 * 28).astype('float32') / 255
+x_test = x_test.reshape(-1, 28 * 28).astype('float32') / 255
+y_train = to_categorical(y_train, 10)
+y_test = to_categorical(y_test, 10)
+# Define a function to create the model
+def create_model(optimizer):
+    model = Sequential([
+        Dense(128, activation='relu', input_shape=(28*28,)),
+        Dense(64, activation='relu'),
+        Dense(10, activation='softmax')
+    ])
+    model.compile(optimizer=optimizer,
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+    return model
+# List of optimizers to compare
+optimizers = [
+    tf.keras.optimizers.SGD(),
+    tf.keras.optimizers.Adam(),
+    tf.keras.optimizers.RMSprop(),
+    tf.keras.optimizers.Adagrad(),
+    tf.keras.optimizers.Nadam()
+]
+# Dictionary to store the results
+history_dict = {}
+# Train and evaluate the model with each optimizer
+for optimizer in optimizers:
+    print(f"Training with optimizer: {optimizer.__class__.__name__}")
+    model = create_model(optimizer)
+    history = model.fit(x_train, y_train,
+                        epochs=5,
+                        batch_size=32,
+                        validation_split=0.2,
+                        verbose=2)
+    history_dict[optimizer.__class__.__name__] = history.history
+# Plot the training and validation accuracy
+plt.figure(figsize=(14, 7))
+for optimizer_name, history in history_dict.items():
+    plt.plot(history['val_accuracy'], label=f'{optimizer_name} Validation Accuracy')
+plt.title('Validation Accuracy Comparison')
+plt.xlabel('Epoch')
+plt.ylabel('Validation Accuracy')
+plt.legend()
+plt.show()
+# Optionally, plot the training accuracy
+plt.figure(figsize=(14, 7))
+for optimizer_name, history in history_dict.items():
+    plt.plot(history['accuracy'], label=f'{optimizer_name} Training Accuracy')
+plt.title('Training Accuracy Comparison')
+plt.xlabel('Epoch')
+plt.ylabel('Training Accuracy')
+plt.legend()
+plt.show()
